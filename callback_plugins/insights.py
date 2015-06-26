@@ -17,6 +17,7 @@
 import requests
 import json
 import logging
+import getpass
 
 logging.captureWarnings(True)
 
@@ -36,7 +37,7 @@ class CallbackModule(object):
         #    self.disabled = True
         self.insights_key = 'Z31g8m6XsyqnYwouvzTk0PzBoitdDXDh'
         self.post_url = 'https://insights-collector.newrelic.com/v1/accounts/127903/events'
-
+        self.user = getpass.getuser()
         """
         cat example_events.json
          | curl -d @- -X POST -H "Content-Type: application/json" -H "X-Insert-Key: YOUR_KEY_HERE" https://insights-collector.newrelic.com/v1/accounts/127903/events
@@ -52,7 +53,7 @@ class CallbackModule(object):
         pass
 
     def runner_on_ok(self, host, res):
-        data = { 'eventType' : 'ansible_run', 'host': host, 'module_name': res['invocation']['module_name'], "changed" : str(res['changed'])}
+        data = { 'eventType' : 'ansible_run', 'host': host, 'module_name': res['invocation']['module_name'], "changed" : str(res['changed']), "user" : self.user}
         self.__send_to_nr__(data)
         #pass
 

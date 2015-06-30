@@ -53,7 +53,7 @@ class CallbackModule(object):
         pass
 
     def runner_on_ok(self, host, res):
-        data = { 'eventType' : 'ansible_run', 'host': host, 'module_name': res['invocation']['module_name'], "changed" : str(res['changed']), "user" : self.user}
+        data = { 'eventType' : 'ansible_run', 'host': host, 'module_name': res['invocation']['module_name'], "changed" : str(res.get('changed', 'False')), "user" : self.user}
         self.__send_to_nr__(data)
         #pass
 

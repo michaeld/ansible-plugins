@@ -1,4 +1,4 @@
-# (C) 2012-2014, Michael DeHaan, <michael.dehaan@gmail.com>
+# (C) 2012-2014, Michael Dumont <michaeldumont@gmail.com>
 
 # This file is part of Ansible
 #
@@ -18,94 +18,35 @@ import requests
 import json
 import logging
 import getpass
+import os
+
+from ansible import utils
 
 logging.captureWarnings(True)
 
 class CallbackModule(object):
 
-    """
-    this is an example ansible callback file that does nothing.  You can drop
-    other classes in the same directory to define your own handlers.  Methods
-    you do not use can be omitted. If self.disabled is set to True, the plugin
-    methods will not be called.
-
-    example uses include: logging, emailing, storing info, etc
-    """
-
     def __init__(self):
         #if foo:
         #    self.disabled = True
-        self.insights_key = 'Z31g8m6XsyqnYwouvzTk0PzBoitdDXDh'
-        self.post_url = 'https://insights-collector.newrelic.com/v1/accounts/127903/events'
+        self.insights_token = os.getenv('NR_INSIGHTS_TOKEN')
+        self.post_uri = os.getenv('NR_INSIGHTS_URI')
         self.user = getpass.getuser()
-        """
-        cat example_events.json
-         | curl -d @- -X POST -H "Content-Type: application/json" -H "X-Insert-Key: YOUR_KEY_HERE" https://insights-collector.newrelic.com/v1/accounts/127903/events
-        """
+
+        if self.insights_token is None or self.post_uri is None:
+            self.disabled = True
+            utils.warning('New Relic Insights token or Post URI could not be loaded. The NR Insights '
+                          'token and URI can be provided using the `NR_INSIGHTS_TOKEN` and `NR_INSIGHTS_URI`'
+                          'environment variables.')
+
     def __send_to_nr__(self, data):
-        headers = { 'Content-Type':'application/json', 'X-Insert-Key': self.insights_key}
-        requests.post(self.post_url, headers=headers, data=json.dumps(data))
-
-    def on_any(self, *args, **kwargs):
-        pass
-
-    def runner_on_failed(self, host, res, ignore_errors=False):
-        pass
+        headers = { 'Content-Type':'application/json', 'X-Insert-Key': self.insights_token}
+        requests.post(self.post_uri, headers=headers, data=json.dumps(data))
 
     def runner_on_ok(self, host, res):
         data = { 'eventType' : 'ansible_run', 'host': host, 'module_name': res['invocation']['module_name'], "changed" : str(res.get('changed', 'False')), "user" : self.user}
         self.__send_to_nr__(data)
-        #pass
 
-    def runner_on_skipped(self, host, item=None):
-        pass
 
-    def runner_on_unreachable(self, host, res):
-        pass
 
-    def runner_on_no_hosts(self):
-        pass
-
-    def runner_on_async_poll(self, host, res, jid, clock):
-        pass
-
-    def runner_on_async_ok(self, host, res, jid):
-        pass
-
-    def runner_on_async_failed(self, host, res, jid):
-        pass
-
-    def playbook_on_start(self):
-        pass
-
-    def playbook_on_notify(self, host, handler):
-        pass
-
-    def playbook_on_no_hosts_matched(self):
-        pass
-
-    def playbook_on_no_hosts_remaining(self):
-        pass
-
-    def playbook_on_task_start(self, name, is_conditional):
-        #self.__send_to_nr__({"eventType": "ansible_run", "task" : name })
-        pass
-
-    def playbook_on_vars_prompt(self, varname, private=True, prompt=None, encrypt=None, confirm=False, salt_size=None, salt=None, default=None):
-        pass
-
-    def playbook_on_setup(self):
-        pass
-
-    def playbook_on_import_for_host(self, host, imported_file):
-        pass
-
-    def playbook_on_not_import_for_host(self, host, missing_file):
-        pass
-
-    def playbook_on_play_start(self, name):
-        pass
-
-    def playbook_on_stats(self, stats):
-        pass
 
